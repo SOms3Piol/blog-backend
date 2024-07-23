@@ -1,28 +1,28 @@
-import express from "express"
-import cors from "cors"
-import bodyParser from "body-parser"
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
 
-const app = express()
+const app = express();
 
-app.use(cors({
-    origin: '*'
-}))
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
-app.use(express.static("public"))
-app.use(bodyParser.json())
-
+app.use(express.static("public"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 //routes import
-import userRouter from './routes/user.routes.js'
-import blogRouter from "./routes/blog.routes.js"
-
-
+import userRouter from "./routes/user.routes.js";
+import blogRouter from "./routes/blog.routes.js";
 
 //routes declaration
 app.use("/api/users", userRouter);
-app.use('/api/blog' , blogRouter);
-
+app.use("/api/blogs", blogRouter);
 
 // http://localhost:8000/api/v1/users/register
 
-export { app }
+export { app };
