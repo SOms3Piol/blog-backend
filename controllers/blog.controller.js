@@ -1,10 +1,11 @@
 import { Blog } from "../models/blog.model.js";
 import { ApiResponse } from "../utiles/ApiResponse.js";
+import fs from 'fs'
 
 const createBlog = async (req, res) => {
   try {
     const { id } = req.user;
-    const { title, blocks } = req.body;
+    const { title, Blog } = req.body;
     const blog = new Blog({
       userId: id,
       img: req.file.path,
@@ -23,7 +24,8 @@ const createBlog = async (req, res) => {
 const deleteBlog = async (req, res) => {
   try {
     const { id } = req.user;
-    await Blog.findOneAndDelete({ userId: id });
+    const deletedBlog = await Blog.findOneAndDelete({ userId: id });
+    fs.unlink(deletedBlog.path)
     res.status(200).json(new ApiResponse(200, "Blog deleted succesfully"));
   } catch (error) {
     res.status(500).json(new ApiResponse(500, "Internal Error"));
@@ -32,15 +34,19 @@ const deleteBlog = async (req, res) => {
 
 const updateBlog = async (req, res) => {
   try {
-    const { _id, img, title, blocks } = req.body;
+    const { _id, title, Blog } = req.body;
     const updated = await Blog.findOneAndUpdate(
       { _id },
       {
-        img: img,
+        img: req.file.path,
         title: title,
-        blocks: blocks,
+        blocks: Blog,
       },
+      {
+        returnOriginal:true
+      }
     );
+    fs.unlink(updated.img);
     return res
       .status(200)
       .json(new ApiResponse(200, updated, "Updation successfully"));
@@ -69,4 +75,4 @@ const singleBlog = async (req, res) => {
   }
 };
 
-export { createBlog, deleteBlog, updateBlog };
+export { createBlog, deleteBlog, updateBlog , singleBlog , getAllBlogs };

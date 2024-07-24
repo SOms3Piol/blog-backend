@@ -5,8 +5,8 @@ import { ApiResponse } from "../utiles/ApiResponse.js";
 import sendMail from "../utiles/sendMail.js";
 import bcrypt from "bcryptjs";
 
-const generateAccessToken = async (email) => {
-  const token = jwt.sign({ username: email }, process.env.TOKEN_SECRET, {
+const generateAccessToken = async (_id=undefined , email) => {
+  const token = jwt.sign({ id: _id, username: email }, process.env.TOKEN_SECRET, {
     expiresIn: "24h",
   });
   return token;
@@ -75,7 +75,7 @@ const loginUser = async (req, res) => {
         );
     }
 
-    const token = await generateAccessToken(email);
+    const token = await generateAccessToken(user._id , email);
     return res
       .status(200)
       .json(
