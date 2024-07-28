@@ -5,37 +5,42 @@ import { ApiResponse } from "../utiles/ApiResponse.js";
 import sendMail from "../utiles/sendMail.js";
 import bcrypt from "bcryptjs";
 
-const generateAccessToken = async (_id=undefined , email) => {
-  const token = jwt.sign({ id: _id, username: email }, process.env.TOKEN_SECRET, {
-    expiresIn: "24h",
-  });
+const generateAccessToken = (email, _id = "") => {
+  const token = jwt.sign(
+    { id: _id, username: email },
+    process.env.TOKEN_SECRET,
+    {
+      expiresIn: "24h",
+    },
+  );
   return token;
 };
 
 const registerUser = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
     const existedUser = await User.findOne({ email });
     if (existedUser) {
       return res
         .status(403)
         .json(new ApiResponse(403, {}, "User already exists"));
     }
+    const token = generateAccessToken(email);
 
-    const token = await generateAccessToken(email);
     const user = new User({
-      email,
-      password,
+      username: username,
+      email: email,
+      password: password,
       verificationToken: token,
     });
 
-    await user.save();
-    await sendMail(email, token, "verify");
+    const saved = await user.save();
 
+    await sendMail(email, token, "verify");
+    const data = { email: saved.email, token: saved.verificationToken };
     return res
       .status(201)
-      .json(new ApiResponse(200, user.email, "User registered successfully"));
+      .json(new ApiResponse(200, data, "User registered successfully"));
   } catch (error) {
     console.error("Error in registerUser:");
     return res
@@ -62,7 +67,7 @@ const loginUser = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      const token = await generateAccessToken(email);
+      const token = generateAccessToken(email);
       await sendMail(email, token, "verify");
       return res
         .status(401)
@@ -75,11 +80,15 @@ const loginUser = async (req, res) => {
         );
     }
 
-    const token = await generateAccessToken(user._id , email);
+    const token = generateAccessToken(email, user._id);
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { email: user.email, token }, "Login successful"),
+        new ApiResponse(
+          200,
+          { email: user.username, token },
+          "Login successful",
+        ),
       );
   } catch (error) {
     console.error("Error in loginUser:", error);
@@ -88,18 +97,24 @@ const loginUser = async (req, res) => {
 };
 
 const verifyUser = async (req, res) => {
-  const { token } = req.query;
   try {
+    const { token } = req.query.params;
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
     const user = await User.findOne(decoded?.email);
-    console.log(user.verificationToken);
     if (user) {
       user.isVerified = true;
       user.verificationToken = undefined;
       const savedUser = await user.save();
       return res
         .status(201)
-        .json(new ApiResponse(200, savedUser, "Verification is completed"));
+        .json(
+          new ApiResponse(
+            200,
+            { email: savedUser.email, isVerified: savedUser.isVerified },
+            "Verification is completed",
+            (success = true),
+          ),
+        );
     }
     return res.status(401).json(new ApiResponse(401, {}, "Invalid Token"));
   } catch (error) {
@@ -107,8 +122,9 @@ const verifyUser = async (req, res) => {
   }
 };
 
-const resendEmail = async (req) => {
-  const { email } = req.query.params;
+const resendEmail = async (req, res) => {
+  const { email } = req.query;
+  console.log(email);
   if (!email) {
     return;
   }
@@ -116,10 +132,32 @@ const resendEmail = async (req) => {
   if (!user) {
     return;
   }
-  const token = generateAccessToken();
+  const token = generateAccessToken(email);
   user.verificationToken = token;
   await user.save();
   await sendMail(email, token, "verify");
+  res.json({
+    ok: true,
+    message: "Email has been sent successfully",
+  });
 };
 
-export { loginUser, registerUser, verifyUser, resendEmail };
+const unique = async (req, res) => {
+  try {
+    const { username } = req.query; // Assuming req.query is correct
+
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(201).json({ ok: true, message: "Username is unique" });
+    }
+    return res.send({ ok: false, message: "Username is already taken" });
+  } catch (err) {
+    return res.json(new ApiResponse(201, {}, "Something went wrong"));
+  }
+};
+
+export { loginUser, registerUser, verifyUser, resendEmail, unique };

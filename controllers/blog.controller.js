@@ -1,18 +1,25 @@
 import { Blog } from "../models/blog.model.js";
 import { ApiResponse } from "../utiles/ApiResponse.js";
-import fs from 'fs'
+import fs from "fs";
+
+const url = (path) => {
+  return path.replace("/public", "");
+};
 
 const createBlog = async (req, res) => {
   try {
     const { id } = req.user;
-    const { title, Blog } = req.body;
-    const blog = new Blog({
+    const { title, desc, blog } = req.body;
+
+    const newBlog = new Blog({
       userId: id,
-      img: req.file.path,
+      img: url(req.file.path),
       title: title,
-      blocks: blocks,
+      desc: desc,
+      blog: blog,
+      path: req.file.path,
     });
-    const savedBlog = await blog.save();
+    const savedBlog = await newBlog.save();
     return res
       .status(201)
       .json(new ApiResponse(201, savedBlog, "Blog created succesfully"));
@@ -24,9 +31,13 @@ const createBlog = async (req, res) => {
 const deleteBlog = async (req, res) => {
   try {
     const { id } = req.user;
-    const deletedBlog = await Blog.findOneAndDelete({ userId: id });
-    fs.unlink(deletedBlog.path)
-    res.status(200).json(new ApiResponse(200, "Blog deleted succesfully"));
+    const { blogId } = req.params;
+    const deletedBlog = await Blog.findOneAndDelete({
+      userId: id,
+      _id: blogId,
+    });
+    fs.unlink(deletedBlog.path);
+    res.status(200).json(new ApiResponse(200, {}, "Blog deleted succesfully"));
   } catch (error) {
     res.status(500).json(new ApiResponse(500, "Internal Error"));
   }
@@ -34,19 +45,21 @@ const deleteBlog = async (req, res) => {
 
 const updateBlog = async (req, res) => {
   try {
-    const { _id, title, Blog } = req.body;
+    const { blogId } = req.params;
+    const { title, desc, blog } = req.body;
     const updated = await Blog.findOneAndUpdate(
-      { _id },
+      { _id: blogId },
       {
-        img: req.file.path,
+        img: url(req.file.path),
         title: title,
-        blocks: Blog,
+        desc: desc,
+        blog: blog,
       },
       {
-        returnOriginal:true
-      }
+        returnOriginal: true,
+      },
     );
-    fs.unlink(updated.img);
+    fs.unlink(updated.path);
     return res
       .status(200)
       .json(new ApiResponse(200, updated, "Updation successfully"));
@@ -62,8 +75,8 @@ const getAllBlogs = async (req, res) => {
 
 const singleBlog = async (req, res) => {
   try {
-    const { _id } = req.body;
-    const blog = await Blog.findOne({ _id });
+    const { id } = req.params;
+    const blog = await Blog.findOne({ id });
     if (!blog) {
       return res.status(401).json(new ApiResponse(401, "Invalid Id of blog"));
     }
@@ -75,4 +88,4 @@ const singleBlog = async (req, res) => {
   }
 };
 
-export { createBlog, deleteBlog, updateBlog , singleBlog , getAllBlogs };
+export { createBlog, deleteBlog, updateBlog, singleBlog, getAllBlogs };
