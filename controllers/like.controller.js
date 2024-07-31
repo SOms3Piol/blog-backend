@@ -6,10 +6,8 @@ const toggleLike = async (req, res) => {
   try {
     const updatedBlog = await Blog.findByIdAndUpdate(
       req.params.id,
-      {
-        $inc: { likes: 1 },
-      },
-      { new: true }, //to return the new document
+      { $inc: { likes: 1 } },
+      { new: true }
     );
 
     return res.json(new ApiResponse(200, updatedBlog, "liked successfully"));

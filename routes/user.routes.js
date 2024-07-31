@@ -16,6 +16,11 @@ userRouter.route("/login").post(loginUser);
 userRouter.route("/verify").get(verifyUser);
 userRouter.route("/resend").get(resendEmail);
 userRouter.route("/unique-username").get(unique);
+userRouter.route("/isValid").get(verifyJWT , (_,res)=>{
+ return res.json({
+    success: true,
+  })
+})
 
 //secured routes
 

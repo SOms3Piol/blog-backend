@@ -5,9 +5,9 @@ export default async function sendMail(email, token, status) {
       host: "sandbox.smtp.mailtrap.io",
       port: 2525,
       auth: {
-        user: "ba630f30acfdf6",
-        pass: "ce3ee1cba3ff5a",
-      },
+        user: "fb7be51f5eee8d",
+        pass: "9e8d286304331c"
+      }
     });
 
     await transport.sendMail({

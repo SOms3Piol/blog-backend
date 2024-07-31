@@ -4,6 +4,7 @@ import {
   getAllBlogs,
   updateBlog,
   singleBlog,
+  userBlogs,
 } from "../controllers/blog.controller.js";
 import {
   toggleLike,
@@ -29,5 +30,6 @@ blogRouter
   .post(verifyJWT, upload.single("file"), updateBlog);
 blogRouter.route("/like/:id").post(verifyJWT, toggleLike);
 blogRouter.route("/unlike/:id").post(verifyJWT, untoggleLike);
+blogRouter.route('/userblogs').get(verifyJWT, userBlogs);
 
 export default blogRouter;
