@@ -16,7 +16,7 @@ export default async function sendMail(email, token, status) {
       subject:
         status == "verify" ? "Verification of the Account" : "Forget Password", // Subject line
       text: "Hello world?", // plain text body
-      html: `<a href ='${process.env.DOMAIN}/verify?token=${token}'>${token}</a>`, // html body
+      html: `<a href ='${process.env.FRONTEND_DOMAIN}/verify?token=${token}'>${token}</a>`, // html body
     });
   } catch (error) {
     console.log("Email Failed To send:  ", error);
